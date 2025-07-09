@@ -3,7 +3,6 @@
 <head>
   <title>Google Maps Property Overlay</title>
   <style>
-    /* Basic CSS for the page */
     body, html {
       height: 100%;
       margin: 0;
@@ -15,175 +14,141 @@
       height: 100%;
     }
 
-    /* The Modal (background) */
-    .modal {
-      display: none; /* Hidden by default */
-      position: fixed; /* Stay in place */
-      z-index: 1000; /* Sit on top */
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto; /* Enable scroll if needed */
-      background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
-      /* Use flexbox to center the modal content */
-      align-items: center;
-      justify-content: center;
+    .info-window-content {
+      color: #333;
     }
-
-    /* Modal Content/Box */
-    .modal-content {
-      background-color: #fefefe;
-      margin: auto;
-      padding: 20px;
-      border: 1px solid #888;
-      width: 80%;
-      max-width: 400px;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
-      position: relative;
+    .info-window-content h2 {
+      margin: 0 0 5px 0;
+      font-size: 1.2em;
     }
-
-    /* The Close Button */
-    .close-button {
-      color: #aaa;
-      position: absolute;
-      top: 10px;
-      right: 20px;
-      font-size: 28px;
-      font-weight: bold;
-    }
-
-    .close-button:hover,
-    .close-button:focus {
-      color: black;
-      text-decoration: none;
-      cursor: pointer;
+    .info-window-content p {
+      margin: 0;
+      font-size: 1em;
     }
   </style>
 </head>
 <body>
-
-  <!-- The div where the map will be rendered -->
   <div id="map"></div>
-
-  <!-- The Modal for property information -->
-  <div id="info-modal" class="modal">
-    <div class="modal-content">
-      <span class="close-button">×</span>
-      <div id="modal-body">
-        <!-- Property info will be injected here by JavaScript -->
-      </div>
-    </div>
-  </div>
 
   <script>
     // --- DATA ---
-    // In a real application, fetch this data from a server.
     const propertiesData = [
       {
         owner: 'The Smith Family',
+        address: '123 Main St',
         path: [
           { lat: 37.7749, lng: -122.4194 },
-          { lat: 37.7755, lng: -122.4194 },
-          { lat: 37.7755, lng: -122.4185 },
+          { lat: 37.7755, lng: -122.4196 },
+          { lat: 37.7756, lng: -122.4185 },
           { lat: 37.7749, lng: -122.4185 },
         ],
       },
       {
         owner: 'Jane Doe',
+        address: '456 Oak Ave',
         path: [
           { lat: 37.7740, lng: -122.4180 },
-          { lat: 37.7745, lng: -122.4180 },
-          { lat: 37.7745, lng: -122.4170 },
-          { lat: 37.7740, lng: -122.4170 },
+          { lat: 37.7745, lng: -122.4181 },
+          { lat: 37.7746, lng: -122.4171 },
+          { lat: 37.7742, lng: -122.4169 },
+          { lat: 37.7739, lng: -122.4175 },
         ],
       },
     ];
 
-    // --- STYLES for polygons ---
-    const defaultStyle = {
-      strokeColor: '#FF0000',
-      strokeOpacity: 0.8,
+    // --- STYLES for our polygons ---
+    
+    const unselectedStyle = {
+      strokeColor: '#FFFFFF',
+      strokeOpacity: 0.9,
       strokeWeight: 2,
-      fillColor: '#FF0000',
-      fillOpacity: 0.35,
+      icons: [{
+        icon: {
+          path: 'M 0,-1 0,1',
+          strokeOpacity: 1,
+          scale: 4
+        },
+        offset: '0',
+        repeat: '15px'
+      }],
+      fillColor: '#FFFFFF',
+      fillOpacity: 0.20,
     };
 
     const highlightStyle = {
-      strokeColor: '#0000FF',
+      strokeColor: '#FF0000',
       strokeOpacity: 1.0,
       strokeWeight: 4,
-      fillColor: '#0000FF',
-      fillOpacity: 0.5,
+      icons: null,
+      fillColor: '#FF0000',
+      fillOpacity: 0.45,
     };
     
     let map;
-    // Keep track of the highlighted polygon
     let highlightedPolygon = null;
+    let infoWindow;
 
     function initMap() {
-      // Initialize the map centered on San Francisco
       map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 16,
-        center: { lat: 37.7749, lng: -122.4194 }, // Center on our first property
-        mapTypeId: 'satellite'
+        zoom: 17,
+        center: { lat: 37.7745, lng: -122.4180 },
+        mapTypeId: 'satellite',
+        disableDefaultUI: true,
+        zoomControl: true,
       });
 
-      // --- Draw Polygons and Add Listeners ---
+      infoWindow = new google.maps.InfoWindow();
+
       propertiesData.forEach(property => {
         const polygon = new google.maps.Polygon({
           paths: property.path,
-          ...defaultStyle // Spread operator for default styles
+          ...unselectedStyle,
+          map: map,
         });
 
         polygon.propertyInfo = property;
 
-        polygon.setMap(map);
-
-        polygon.addListener('click', function() {
+        polygon.addListener('click', function(event) {
           if (highlightedPolygon) {
-            highlightedPolygon.setOptions(defaultStyle);
+            highlightedPolygon.setOptions(unselectedStyle);
           }
           
           this.setOptions(highlightStyle);
-          highlightedPolygon = this; // Set the current polygon as highlighted
+          highlightedPolygon = this;
 
-          showInfoModal(this.propertyInfo);
+          const contentString = `
+            <div class="info-window-content">
+              <h2>Property Details</h2>
+              <p><strong>Owner:</strong> ${this.propertyInfo.owner}</p>
+              <p><strong>Address:</strong> ${this.propertyInfo.address}</p>
+            </div>
+          `;
+          
+          // Get the center of the polygon to position the InfoWindow
+          const center = getPolygonCenter(this);
+
+          infoWindow.setContent(contentString);
+          infoWindow.setPosition(center);
+          infoWindow.open(map);
         });
       });
 
-      // --- MODAL LOGIC ---
-      const modal = document.getElementById('info-modal');
-      const closeButton = document.querySelector('.close-button');
-
-      function showInfoModal(info) {
-        const modalBody = document.getElementById('modal-body');
-        modalBody.innerHTML = `
-          <h2>Property Details</h2>
-          <p><strong>Owner:</strong> ${info.owner}</p>
-        `;
-        modal.style.display = 'flex';
-      }
-      
-      function hideModal() {
-        modal.style.display = 'none';
+      infoWindow.addListener('closeclick', () => {
         if (highlightedPolygon) {
-          highlightedPolygon.setOptions(defaultStyle);
-          highlightedPolygon = null; // Clear the reference
+          highlightedPolygon.setOptions(unselectedStyle);
+          highlightedPolygon = null;
         }
-      }
-
-      closeButton.onclick = function() {
-        hideModal();
-      }
-
-      window.onclick = function(event) {
-        if (event.target == modal) {
-          hideModal();
-        }
-      }
+      });
     }
+
+    function getPolygonCenter(polygon) {
+      const bounds = new google.maps.LatLngBounds();
+      polygon.getPath().forEach(function(latLng) {
+        bounds.extend(latLng);
+      });
+      return bounds.getCenter();
+    }
+
   </script>
 
   <script async defer
