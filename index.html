@@ -34,24 +34,23 @@
     // --- DATA ---
     const propertiesData = [
       {
-        owner: 'The Smith Family',
-        address: '123 Main St',
+        owner: '田中',
+        address: '1 Chome, Shibakoen, Minato City',
         path: [
-          { lat: 37.7749, lng: -122.4194 },
-          { lat: 37.7755, lng: -122.4196 },
-          { lat: 37.7756, lng: -122.4185 },
-          { lat: 37.7749, lng: -122.4185 },
+          { lat: 35.65825, lng: 139.75480 },
+          { lat: 35.65850, lng: 139.75520 },
+          { lat: 35.65830, lng: 139.75545 },
+          { lat: 35.65805, lng: 139.75505 },
         ],
       },
       {
-        owner: 'Jane Doe',
-        address: '456 Oak Ave',
+        owner: '鈴木株式会社',
+        address: '2 Chome, Daimon, Minato City',
         path: [
-          { lat: 37.7740, lng: -122.4180 },
-          { lat: 37.7745, lng: -122.4181 },
-          { lat: 37.7746, lng: -122.4171 },
-          { lat: 37.7742, lng: -122.4169 },
-          { lat: 37.7739, lng: -122.4175 },
+          { lat: 35.65740, lng: 139.75490 },
+          { lat: 35.65775, lng: 139.75550 },
+          { lat: 35.65745, lng: 139.75585 },
+          { lat: 35.65720, lng: 139.75510 },
         ],
       },
     ];
@@ -90,8 +89,8 @@
 
     function initMap() {
       map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 17,
-        center: { lat: 37.7745, lng: -122.4180 },
+        zoom: 18,
+        center: { lat: 35.6580, lng: 139.7547 },
         mapTypeId: 'satellite',
         disableDefaultUI: true,
         zoomControl: true,
